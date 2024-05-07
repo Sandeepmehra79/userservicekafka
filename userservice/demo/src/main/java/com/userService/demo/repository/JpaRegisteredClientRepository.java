@@ -57,6 +57,10 @@ public class JpaRegisteredClientRepository implements RegisteredClientRepository
         return this.clientRepository.findByClientId(clientId).map(this::toObject).orElse(null);
     }
 
+    public void removeByClientId(String clientId) {
+        this.clientRepository.deleteById(clientId);
+    }
+
     private RegisteredClient toObject(Client client) {
         Set<String> clientAuthenticationMethods = StringUtils.commaDelimitedListToSet(
                 client.getClientAuthenticationMethods());

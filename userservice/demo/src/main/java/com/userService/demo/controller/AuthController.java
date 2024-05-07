@@ -1,15 +1,13 @@
 package com.userService.demo.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.userService.demo.dto.JwtData;
 import com.userService.demo.dto.UserDto.*;
 import com.userService.demo.exception.UserNotFoundException;
 import com.userService.demo.service.AuthService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/auth")
@@ -33,13 +31,20 @@ public class AuthController {
     }
 
     @PostMapping("/signup")
-    public ResponseEntity<UserResponseDto> signUp(@RequestBody SignUpRequestDto request) {
+    public ResponseEntity<UserResponseDto> signUp(@RequestBody SignUpRequestDto request) throws JsonProcessingException {
         UserResponseDto userResponseDto = authService.signUp(request.getEmail(), request.getPassword());
         return new ResponseEntity<>(userResponseDto, HttpStatus.OK);
     }
 
+//    @PostMapping("/validate")
+//    public ResponseEntity<JwtData> validateToken(@RequestBody ValidateTokenRequestDto request) throws Exception {
+//        return ResponseEntity.ok(authService.validate(request.getToken(), request.getUserId()));
+//    }
+
     @PostMapping("/validate")
     public ResponseEntity<JwtData> validateToken(@RequestBody ValidateTokenRequestDto request) throws Exception {
-        return ResponseEntity.ok(authService.validate(request.getToken(), request.getUserId()));
+        JwtData jwtData = new JwtData();
+        jwtData.setEmail(request.getToken());
+        return ResponseEntity.ok(jwtData);
     }
 }

@@ -1,6 +1,10 @@
 package com.userService.demo.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.userService.demo.client.KafkaProducerClient;
 import com.userService.demo.dto.JwtData;
+import com.userService.demo.dto.SendEmailMessageDto;
 import com.userService.demo.model.Role;
 import com.userService.demo.security.RSAKeyRecord;
 import com.userService.demo.dto.UserDto.UserResponseDto;
@@ -14,6 +18,7 @@ import com.userService.demo.repository.UserRepository;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.Jwts;
+import org.apache.kafka.clients.producer.KafkaProducer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -34,14 +39,21 @@ public class AuthService {
     private final SessionRepository sessionRepository;
     private final User user;
     private RSAKeyRecord rsaKeyRecord;
+    private KafkaProducerClient kafkaProducerClient;
+//    for converting json object to java object and vice versa
+    private ObjectMapper objectMapper;
 
     @Autowired
-    public AuthService(BCryptPasswordEncoder bCryptPasswordEncoder, UserRepository userRepository, SessionRepository sessionRepository, RSAKeyRecord rsaKeyRecord, User user) {
+    public AuthService(BCryptPasswordEncoder bCryptPasswordEncoder, UserRepository userRepository,
+                       SessionRepository sessionRepository, RSAKeyRecord rsaKeyRecord, User user,
+                       KafkaProducerClient kafkaProducerClient, ObjectMapper objectMapper) {
         this.bCryptPasswordEncoder = bCryptPasswordEncoder;
         this.userRepository = userRepository;
         this.sessionRepository = sessionRepository;
         this.rsaKeyRecord = rsaKeyRecord;
         this.user = user;
+        this.kafkaProducerClient = kafkaProducerClient;
+        this.objectMapper = objectMapper;
     }
 
     public ResponseEntity<UserResponseDto> login(String email, String password) throws UserNotFoundException {
@@ -108,12 +120,22 @@ public class AuthService {
         sessionRepository.save(session);
     }
 
-    public UserResponseDto signUp(String email, String password) {
+    public UserResponseDto signUp(String email, String password) throws JsonProcessingException {
         User user = new User();
         user.setEmail(email);
         user.setPassword(bCryptPasswordEncoder.encode(password));
 
         User savedUser = userRepository.save(user);
+//         this is for kafka
+
+        SendEmailMessageDto sendEmailMessageDto = new SendEmailMessageDto();
+        sendEmailMessageDto.setTo(savedUser.getEmail());
+        sendEmailMessageDto.setSubject("sandeepmehra79@gmail.com");
+        sendEmailMessageDto.setBody("welcome body");
+        sendEmailMessageDto.setSubject("welcome subject");
+        System.out.println("this is we are doing ");
+        kafkaProducerClient.sendMessage("sendEmail" ,
+                objectMapper.writeValueAsString(sendEmailMessageDto));
         return UserToUserResponseDto.convert(savedUser);
     }
 

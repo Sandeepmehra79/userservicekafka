@@ -17,6 +17,7 @@ import org.springframework.security.oauth2.server.authorization.client.Registere
 public class Client {
     @Id
     private String id;
+    @Column(unique = true)
     private String clientId;
     private Instant clientIdIssuedAt;
     private String clientSecret;

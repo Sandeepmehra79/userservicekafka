@@ -4,9 +4,7 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
-import java.util.Collections;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import com.nimbusds.jose.jwk.JWKSet;
@@ -14,6 +12,8 @@ import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
+
+import com.userService.demo.model.User;
 
 import com.userService.demo.repository.JpaRegisteredClientRepository;
 import com.userService.demo.repository.UserRepository;
@@ -29,6 +29,7 @@ import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -82,32 +83,6 @@ public class SecurityConfig {
         return http.build();
     }
 
-//    @Order(2)
-//    @Bean
-//    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-//        return http
-//                .csrf(AbstractHttpConfigurer::disable)
-//                .cors(AbstractHttpConfigurer::disable)
-//                .authorizeHttpRequests((request) -> {
-//                    request.requestMatchers("/user/**").permitAll();
-//                    request.requestMatchers("/role/**").permitAll();
-//                    request.requestMatchers("/auth/**").permitAll();
-//                    request.requestMatchers("/role/home").hasAuthority("ADMIN");
-//
-//                    request.requestMatchers("/home/user").hasAuthority("USER");
-//
-//                    request.requestMatchers("/home/admin").hasAuthority("ADMIN");
-//
-//                    request.requestMatchers("/home/support").hasAuthority("SUPPORT");
-//
-//                    request.requestMatchers("/home/all").hasAnyAuthority("ADMIN","USER", "SUPPORT");
-//
-//                    request.anyRequest().authenticated();
-//                })
-//                .formLogin(Customizer.withDefaults())
-//                .httpBasic(Customizer.withDefaults())
-//                .build();
-//    }
 
     @Bean
     @Order(2)
@@ -120,7 +95,9 @@ public class SecurityConfig {
                 // Form login handles the redirect to the login page from the
                 // authorization server filter chain
                 .formLogin(Customizer.withDefaults())
-                .httpBasic(Customizer.withDefaults());
+                .httpBasic(Customizer.withDefaults())
+                .csrf(AbstractHttpConfigurer::disable)
+                .cors(AbstractHttpConfigurer::disable);
 
         return http.build();
     }
@@ -208,33 +185,45 @@ public class SecurityConfig {
 //        return new CustomUserDetailsService();
 //    }
 
-//    @Bean
-//    public OAuth2TokenCustomizer<JwtEncodingContext> jwtTokenCustomizer() {
-//        return (context) -> {
-//            if (OAuth2TokenType.ACCESS_TOKEN.equals(context.getTokenType())) {
-//                context.getClaims().claims((claims) -> {
-//                    Set<String> roles = AuthorityUtils.authorityListToSet(context.getPrincipal().getAuthorities())
-//                            .stream()
-//                            .map(c -> c.replaceFirst("^ROLE_", ""))
-//                            .collect(Collectors.collectingAndThen(Collectors.toSet(), Collections::unmodifiableSet));
-//                    claims.put("roles", roles);
-//                });
-//            }
-//        };
-//    }
-    @Bean
-    public OAuth2TokenCustomizer<JwtEncodingContext> jwtTokenCustomizer() {
-        return (context) -> {
-            if (OAuth2TokenType.ACCESS_TOKEN.equals(context.getTokenType())) {
-                context.getClaims().claims((claims) -> {
-                    Set<String> roles = AuthorityUtils.authorityListToSet(context.getPrincipal().getAuthorities())
-                            .stream()
-                            .map(c -> c.replaceFirst("^ROLE_", ""))
-                            .collect(Collectors.collectingAndThen(Collectors.toSet(), Collections::unmodifiableSet));
-                    claims.put("roles", roles);
-                });
-            }
-        };
-    }
+@Bean
+public OAuth2TokenCustomizer<JwtEncodingContext> jwtTokenCustomizer() {
+    return (context) -> {
+        if (OAuth2TokenType.ACCESS_TOKEN.equals(context.getTokenType())) {
+            context.getClaims().claims((claims) -> {
+                Set<String> roles = AuthorityUtils.authorityListToSet(context.getPrincipal().getAuthorities())
+                        .stream()
+                        .map(c -> c.replaceFirst("^ROLE_", ""))
+                        .collect(Collectors.collectingAndThen(Collectors.toSet(), Collections::unmodifiableSet));
+                claims.put("roles", roles);
+            });
+        }
+    };
+}
 
+    @Order(1)
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        return http
+                .csrf(AbstractHttpConfigurer::disable)
+                .cors(AbstractHttpConfigurer::disable)
+                .authorizeHttpRequests((request) -> {
+                                request.requestMatchers("/user/**").permitAll();
+                                request.requestMatchers("/role/**").permitAll();
+                                request.requestMatchers("/auth/**").permitAll();
+                                request.requestMatchers("/role/home").hasAuthority("ADMIN");
+
+                    request.requestMatchers("/home/user").hasAuthority("USER");
+
+                    request.requestMatchers("/home/admin").hasAuthority("ADMIN");
+
+                    request.requestMatchers("/home/support").hasAuthority("SUPPORT");
+
+                    request.requestMatchers("/home/all").hasAnyAuthority("ADMIN","USER", "SUPPORT");
+
+                    request.anyRequest().authenticated();
+                        })
+                .formLogin(Customizer.withDefaults())
+                .httpBasic(Customizer.withDefaults())
+                .build();
+    }
 }

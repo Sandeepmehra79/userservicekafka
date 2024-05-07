@@ -14,7 +14,7 @@ import java.util.UUID;
 
 //https://docs.spring.io/spring-authorization-server/reference/getting-started.html
 //https://docs.spring.io/spring-authorization-server/reference/guides/how-to-jpa.html#implement-core-services
- @EnableConfigurationProperties(RSAKeyRecord.class)
+@EnableConfigurationProperties(RSAKeyRecord.class)
 @SpringBootApplication
 public class UserServiceApplication {
 
